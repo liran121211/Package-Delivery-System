@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2021, Liran Smadja, ID: 311370092, Tamar Aminov, ID: 209153501, All rights reserved.
+ * Copyright (c) 2021, Liran Smadja, Tamar Aminov, All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
-
 package components;
 
 import javax.swing.*;
@@ -109,7 +108,12 @@ public class PostFrame implements ActionListener {
         timerGUI.start();
     }
 
-
+    /**
+     * Restore system and objects to the last saved checkpoint.
+     * @param checkPoint (Memento) object
+     * @throws InterruptedException - throw exception if Thread was interrupted.
+     * @since 1.2
+     */
     private void restoreSystem(Memento checkPoint) throws InterruptedException {
         game.terminateThreads();
         Thread.sleep(100);
@@ -167,7 +171,11 @@ public class PostFrame implements ActionListener {
 
     }
 
-
+    /**
+     * Packages report window
+     * Choose which packages report to retrieve.
+     * @since 1.2
+     */
     private void ReportWindow() {
         //Report Frame
         JFrame reportFrame = new JFrame();
@@ -364,6 +372,11 @@ public class PostFrame implements ActionListener {
         branchCancelButton.addActionListener(this);
     }
 
+    /**
+     * Branch cloning window
+     * Choose which Branch to clone
+     * @since 1.2
+     */
     private void branchCloneWindow() {
         //Initializers
         branchCloneFrame = new JFrame("Clone Branch");
@@ -464,7 +477,7 @@ public class PostFrame implements ActionListener {
                 settingWindow();
             else settingsFrame.setVisible(!settingsFrame.isVisible());
 
-        if (e.getSource().equals(buttonsList[1])) { //Start Game
+        if (e.getSource().equals(buttonsList[1])) { //Start Game process
             if (MainOffice.getInstance() != null) {
                 buttonsList[0].setEnabled(false);
                 buttonsList[1].setEnabled(false);
@@ -482,12 +495,14 @@ public class PostFrame implements ActionListener {
         if (e.getSource().equals(buttonsList[2])) { //Suspend all threads
             suspendThreads();
             buttonsList[2].setEnabled(false);
+            buttonsList[6].setEnabled(false);
             buttonsList[3].setEnabled(true);
         }
 
         if (e.getSource().equals(buttonsList[3])) { //Resume all threads
             resumeThreads();
             buttonsList[2].setEnabled(true);
+            buttonsList[6].setEnabled(true);
             buttonsList[3].setEnabled(false);
         }
 
@@ -586,6 +601,11 @@ public class PostFrame implements ActionListener {
         mainOfficeWorker.execute();
     }
 
+    /**
+     * Clone entire Branch object with given Branch ID number.
+     * @param (branchIndex) Branch ID numbber.
+     * @since 1.2
+     */
     private synchronized void cloneBranch(int branchIndex) {
         if (branch.getValue() < 10) {
             CopyOnWriteArrayList<Object> components = ((PostPanel) systemPane).getJcomponents();
@@ -750,16 +770,31 @@ public class PostFrame implements ActionListener {
             MainOffice.getInstance().getCustomers().get(k).setSuspend();
     }
 
-
+    /**
+     * Get mainFrame instance
+     * @return (mainFrame) object
+     * @since 1.2
+     */
     protected JFrame getMainFrame() {
         return mainFrame;
     }
 
+    /**
+     * Get systemPane instance
+     * @return (systemPane) object
+     * @since 1.2
+     */
     protected JPanel getSystemPane() {
         return systemPane;
     }
 
-    public BranchGUI getBranchGui(int branchID) {
+    /**
+     * Get BranchGUI object based on Branch ID given.
+     * @param (branchID) branch ID number
+     * @return (BranchGUI) object.
+     * @since 1.2
+     */
+    protected BranchGUI getBranchGui(int branchID) {
         return game.getHub().getBranches().get(branchID).getGui();
     }
 }
