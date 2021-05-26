@@ -4,8 +4,8 @@
  */
 
 package components;
-import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represent the Trucks for transporting packages.
@@ -25,11 +25,11 @@ public class Truck {
     private boolean available;
     private int timeLeft;
     private int keepTime;
-    private ArrayList<Package> packages;
+    private CopyOnWriteArrayList<Package> packages;
 
     //Constructors
     public Truck() {
-        packages = new ArrayList<>();
+        this.packages = new CopyOnWriteArrayList<>();
         this.licensePlate = (rand.nextInt(900) + 100) + "-" + (rand.nextInt(90) + 10) + "-" + (rand.nextInt(900) + 100);
         this.truckModel = "M" + rand.nextInt(5);
         this.available = true;
@@ -39,7 +39,7 @@ public class Truck {
     }
 
     public Truck(String licensePlate, String truckModel) {
-        packages = new ArrayList<>();
+        this.packages = new CopyOnWriteArrayList<>();
         this.licensePlate = licensePlate;
         this.truckModel = truckModel;
         this.available = true;
@@ -49,7 +49,6 @@ public class Truck {
     }
 
     //Methods
-    //TODO (on demand)
 
     //Getters & Setters
     /**
@@ -147,7 +146,7 @@ public class Truck {
      * @return Truck packages list.
      * @since 1.0
      */
-    protected ArrayList<Package> getPackages() {
+    protected CopyOnWriteArrayList<Package> getPackages() {
         return packages;
     }
 
@@ -156,7 +155,7 @@ public class Truck {
      * @param packages (Truck packages list).
      * @since 1.0
      */
-    protected void setPackages(ArrayList<Package> packages) {
+    protected void setPackages(CopyOnWriteArrayList<Package> packages) {
         this.packages = packages;
     }
 
@@ -218,4 +217,5 @@ public class Truck {
     protected synchronized void setKeepTime(int keepTime) {
         this.keepTime = keepTime;
     }
+
 }

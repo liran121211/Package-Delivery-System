@@ -16,7 +16,7 @@ import java.awt.Graphics;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class BranchGUI extends JComponent {
+public class BranchGUI extends JComponent implements Cloneable {
 
     //Statics
     private static int UID = 0;
@@ -34,17 +34,36 @@ public class BranchGUI extends JComponent {
 
     //Constructors
     public BranchGUI(int x, int y) {
-        isHUB = false;
+        this.isHUB = false;
         this.id = UID++;
-        setLocation(x, y);
-        color = LIGHT_BLUE;
+        this.setLocation(x, y);
+        this.color = LIGHT_BLUE;
     }
 
     public BranchGUI(boolean isHUB) {
         this.isHUB = isHUB;
         this.id = UID++;
-        setLocation(1140, 200);
-        color = LIGHT_BLUE;
+        this.setLocation(1140, 200);
+        this.color = LIGHT_BLUE;
+    }
+
+
+    @Override
+    protected BranchGUI clone() throws CloneNotSupportedException {
+        BranchGUI tempBranchGUI = null;
+        try {
+            tempBranchGUI = (BranchGUI) super.clone();
+            tempBranchGUI.id = this.id;
+            tempBranchGUI.color = this.color;
+            if (this.pointTo != null)
+                tempBranchGUI.pointTo = this.pointTo.clone();
+            else
+                tempBranchGUI.pointTo = null;
+            tempBranchGUI.isHUB = this.isHUB;
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning BranchGUI object!");
+        }
+        return tempBranchGUI;
     }
 
     /**
@@ -56,7 +75,7 @@ public class BranchGUI extends JComponent {
     protected void draw(Graphics g) {
         if (isHUB) {
             g.setColor(VERY_DARK_GREEN);
-            g.fillRect(1140, 200, 40, 200);
+            g.fillRect(1730, 200, 40, 200);
         } else {
             g.setColor(color);
             g.fillRect(getX(), getY(), width, height);
@@ -105,7 +124,7 @@ public class BranchGUI extends JComponent {
      * @return pointTo (Line GUI)
      * @since 1.1
      */
-    public LineGUI getPointTo() {
+    protected LineGUI getPointTo() {
         return pointTo;
     }
 
@@ -115,7 +134,8 @@ public class BranchGUI extends JComponent {
      * @param pointTo pointTo (Line GUI)
      * @since 1.1
      */
-    public void setPointTo(LineGUI pointTo) {
+    protected void setPointTo(LineGUI pointTo) {
         this.pointTo = pointTo;
     }
+
 }

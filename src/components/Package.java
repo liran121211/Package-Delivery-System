@@ -6,6 +6,7 @@
 package components;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static components.MainOffice.getId; //main clock
 
@@ -16,7 +17,7 @@ import static components.MainOffice.getId; //main clock
  * @author Liran Smadja, Tamar Aminov
  */
 
-public abstract class Package {
+public abstract class Package{
 
     //Statics
     static private int id = 1000;
@@ -27,11 +28,11 @@ public abstract class Package {
     private Status status;
     private Address senderAddress, destinationAddress;
     private PackageGUI senderPackage, destinationPackage;
-    private ArrayList<Tracking> tracking;
+    private CopyOnWriteArrayList<Tracking> tracking;
 
     //Constructors
     public Package(Priority priority, Address senderAddress, Address destinationAddress) {
-        tracking = new ArrayList<>();
+        this.tracking = new CopyOnWriteArrayList<>();
         this.tracking.add(new Tracking(getId(), null, Status.CREATION)); // null - package at customer position
         this.priority = priority;
         this.senderAddress = senderAddress;
@@ -40,7 +41,6 @@ public abstract class Package {
         this.packageID = id;
         id++;
     }
-
     //Methods
 
     /**
@@ -173,7 +173,7 @@ public abstract class Package {
      * @return package tracking list.
      * @since 1.0
      */
-    protected ArrayList<Tracking> getTracking() {
+    protected CopyOnWriteArrayList<Tracking> getTracking() {
         return tracking;
     }
 
@@ -183,7 +183,7 @@ public abstract class Package {
      * @param tracking (package tracking list)
      * @since 1.0
      */
-    protected void setTracking(ArrayList<Tracking> tracking) {
+    protected void setTracking(CopyOnWriteArrayList<Tracking> tracking) {
         this.tracking = tracking;
     }
 
@@ -245,7 +245,7 @@ public abstract class Package {
      * @return senderPackage (Package apackage)
      * @since 1.1
      */
-    public PackageGUI getSenderPackage() {
+    protected PackageGUI getSenderPackage() {
         return senderPackage;
     }
 
@@ -255,7 +255,7 @@ public abstract class Package {
      * @param senderPackage senderPackage (Package apackage)
      * @since 1.1
      */
-    public void setSenderPackage(PackageGUI senderPackage) {
+    protected void setSenderPackage(PackageGUI senderPackage) {
         this.senderPackage = senderPackage;
     }
 
@@ -265,7 +265,7 @@ public abstract class Package {
      * @return senderPackage (Package apackage)
      * @since 1.1
      */
-    public PackageGUI getDestinationPackage() {
+    protected PackageGUI getDestinationPackage() {
         return destinationPackage;
     }
 
@@ -275,8 +275,10 @@ public abstract class Package {
      * @param destinationPackage destinationPackage (Package apackage)
      * @since 1.1
      */
-    public void setDestinationPackage(PackageGUI destinationPackage) {
+    protected void setDestinationPackage(PackageGUI destinationPackage) {
         this.destinationPackage = destinationPackage;
     }
+
+
 
 }

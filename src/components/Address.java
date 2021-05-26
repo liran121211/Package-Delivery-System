@@ -13,7 +13,7 @@ package components;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class Address {
+public class Address implements Cloneable {
 
     //Attributes
     private int zip;
@@ -25,6 +25,18 @@ public class Address {
         this.street = street;
     }
 
+    @Override
+    protected Address clone() throws CloneNotSupportedException {
+        Address tempAddress = null;
+        try {
+            tempAddress = (Address) super.clone();
+            tempAddress.zip = this.zip;
+            tempAddress.street = this.street;
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning Address object!");
+        }
+        return tempAddress;
+    }
     //Getters & Setters
 
     /**
@@ -95,9 +107,6 @@ public class Address {
         if (!(obj instanceof Address))
             return false;
 
-        if (this.zip != ((Address) obj).zip || this.street != ((Address) obj).street)
-            return false;
-
-        return true;
+        return this.zip == ((Address) obj).zip && this.street == ((Address) obj).street;
     }
 }

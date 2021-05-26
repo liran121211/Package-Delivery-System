@@ -14,7 +14,7 @@ import java.awt.*;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class PackageGUI extends JComponent {
+public class PackageGUI extends JComponent implements Cloneable{
 
     //Statics
     private static final Color LIGHT_RED = new Color(246, 152, 152);
@@ -22,7 +22,7 @@ public class PackageGUI extends JComponent {
 
     //Attributes
     private Color color;
-    private final int radiusSize;
+    private int radiusSize;
     private LineGUI pointTo;
 
     //Constructors
@@ -33,13 +33,27 @@ public class PackageGUI extends JComponent {
 
     }
 
+    @Override
+    protected PackageGUI clone() throws CloneNotSupportedException {
+        PackageGUI tempPackageGUI = null;
+        try {
+            tempPackageGUI = (PackageGUI) super.clone();
+            tempPackageGUI.color = this.color;
+            tempPackageGUI.radiusSize = this.radiusSize;
+            tempPackageGUI.pointTo = this.pointTo.clone();
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning PackageGUI object!");
+        }
+        return tempPackageGUI;
+    }
+
     /**
      * <p>draw package component</p>
      *
      * @param g (Graphics object).
      * @since 1.1
      */
-    public void draw(Graphics g) {
+    protected void draw(Graphics g) {
         g.setColor(color);
         g.fillOval(getX(), getY(), radiusSize, radiusSize);
 
@@ -66,7 +80,7 @@ public class PackageGUI extends JComponent {
      * @return pointTo (package GUI)
      * @since 1.1
      */
-    public LineGUI getPointTo() {
+    protected LineGUI getPointTo() {
         return this.pointTo;
     }
 
@@ -76,7 +90,7 @@ public class PackageGUI extends JComponent {
      * @param pointTo pointTo (package GUI)
      * @since 1.1
      */
-    public void setPointTo(LineGUI pointTo) {
+    protected void setPointTo(LineGUI pointTo) {
         this.pointTo = pointTo;
     }
 }

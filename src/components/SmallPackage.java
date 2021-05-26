@@ -5,12 +5,15 @@
 
 package components;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Represent small package.
+ *
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class SmallPackage extends Package {
+public class SmallPackage extends Package implements Cloneable {
 
     //Attributes
     boolean acknowledge;
@@ -23,11 +26,33 @@ public class SmallPackage extends Package {
     }
 
     //Methods
-    //Todo (on demand)
+    @Override
+    protected SmallPackage clone() throws CloneNotSupportedException {
+        SmallPackage tempSmallPackage = null;
+        CopyOnWriteArrayList<Tracking> tempTracking = new CopyOnWriteArrayList<>();
+        try {
+            tempSmallPackage = (SmallPackage) super.clone();
+            tempSmallPackage.setPackageID(super.getPackageID());
+            tempSmallPackage.setStatus(super.getStatus());
+            tempSmallPackage.setPriority(super.getPriority());
+            tempSmallPackage.setSenderPackage(super.getSenderPackage().clone());
+            tempSmallPackage.setDestinationPackage(super.getDestinationPackage().clone());
+            for (int i = 0; i < super.getTracking().size(); i++)
+                tempTracking.add(super.getTracking().get(i).clone());
+            tempSmallPackage.setTracking(tempTracking);
+            tempSmallPackage.acknowledge = this.acknowledge;
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning SmallPackage object!");
+        }
+        return tempSmallPackage;
+    }
 
     //Getters & Setters
+
     /**
      * <p>Get package delivery notification</p>
+     *
      * @return package delivery notification.
      * @since 1.0
      */
@@ -37,6 +62,7 @@ public class SmallPackage extends Package {
 
     /**
      * <p>Update package delivery notification</p>
+     *
      * @param acknowledge (package delivery notification)
      * @since 1.0
      */
@@ -45,8 +71,10 @@ public class SmallPackage extends Package {
     }
 
     //Overriders
+
     /**
      * <p>Output object details</p>
+     *
      * @return this object attributes details.
      * @since 1.0
      */
@@ -59,6 +87,7 @@ public class SmallPackage extends Package {
 
     /**
      * <p>SmallPackage objects comparison</p>
+     *
      * @param obj (SmallPackage object)
      * @return True if objects are equal, else False.
      * @since 1.0
@@ -75,9 +104,6 @@ public class SmallPackage extends Package {
             return false;
 
         //Primitive Comparison
-        if (this.acknowledge != ((SmallPackage) obj).acknowledge)
-            return false;
-
-        return true;
+        return this.acknowledge == ((SmallPackage) obj).acknowledge;
     }
 }

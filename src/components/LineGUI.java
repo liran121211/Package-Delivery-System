@@ -7,7 +7,6 @@ package components;
 
 import javax.swing.*;
 import java.awt.Color;
-import java.awt.Graphics;
 
 /**
  * Represent a line between 2 graphical components Graphics.
@@ -18,7 +17,7 @@ import java.awt.Graphics;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class LineGUI extends JComponent {
+public class LineGUI extends JComponent implements Cloneable {
 
     //Attributes
     private Color color;
@@ -34,6 +33,27 @@ public class LineGUI extends JComponent {
         this.startY = startY;
         this.endX = endX;
         this.endY = endY;
+    }
+
+    /*
+     * <p>Start thread activity</p>
+     *
+     * @since 1.1
+     */
+    @Override
+    protected LineGUI clone() throws CloneNotSupportedException {
+        LineGUI tempLineGUI = null;
+        try {
+            tempLineGUI = (LineGUI) super.clone();
+            tempLineGUI.color = this.color;
+            tempLineGUI.startX = this.startX;
+            tempLineGUI.startY = this.startY;
+            tempLineGUI.endX = this.endX;
+            tempLineGUI.endY = this.endY;
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning LineGUI object!");
+        }
+        return tempLineGUI;
     }
 
     /**
@@ -86,4 +106,43 @@ public class LineGUI extends JComponent {
         return endY;
     }
 
+    /**
+     * <p>Get line end y</p>
+     *
+     * @param startX position (Jcomponent)
+     * @since 1.2
+     */
+    protected void setStartX(int startX) {
+        this.startX = startX;
+    }
+
+    /**
+     * <p>Get line end y</p>
+     *
+     * @param startY position (Jcomponent)
+     * @since 1.2
+     */
+    protected void setStartY(int startY) {
+        this.startY = startY;
+    }
+
+    /**
+     * <p>Get line end y</p>
+     *
+     * @param endX position (Jcomponent)
+     * @since 1.2
+     */
+    protected void setEndX(int endX) {
+        this.endX = endX;
+    }
+
+    /**
+     * <p>Get line end y</p>
+     *
+     * @param endY position (Jcomponent)
+     * @since 1.2
+     */
+    protected void setEndY(int endY) {
+        this.endY = endY;
+    }
 }

@@ -5,7 +5,9 @@
 
 package components;
 
-import java.util.ArrayList;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represent a local branch.
@@ -15,7 +17,7 @@ import java.util.ArrayList;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class Branch implements Node, Runnable {
+public class Branch implements Node, Runnable, Cloneable {
     //Statics
     private static int id = 0;
 
@@ -23,32 +25,74 @@ public class Branch implements Node, Runnable {
     private int brachId;
     private String branchName;
     private Boolean isSuspended;
+    private Boolean isTerminated;
     private BranchGUI gui;
-    private ArrayList<Object> listTrucks;
-    private ArrayList<Package> listPackages;
+    private CopyOnWriteArrayList<Object> listTrucks;
+    private CopyOnWriteArrayList<Package> listPackages;
+    private PropertyChangeSupport support;
 
 
     //Constructors
     public Branch() {
-        super();
         this.brachId = id;
-        listTrucks = new ArrayList<>();
-        listPackages = new ArrayList<>();
+        this.listTrucks = new CopyOnWriteArrayList<>();
+        this.listPackages = new CopyOnWriteArrayList<>();
+        this.support = new PropertyChangeSupport(this);
         this.branchName = "Branch " + this.brachId;
-        isSuspended = false;
+        this.isSuspended = false;
+        this.isTerminated = false;
         System.out.println(this.toString());
         id++;
     }
 
     public Branch(String branchName) {
-        super();
         this.branchName = branchName;
-        listTrucks = new ArrayList<>();
-        listPackages = new ArrayList<>();
+        this.listTrucks = new CopyOnWriteArrayList<>();
+        this.listPackages = new CopyOnWriteArrayList<>();
+        this.support = new PropertyChangeSupport(this);
         this.brachId = id;
-        isSuspended = false;
+        this.isSuspended = false;
+        this.isTerminated = false;
         System.out.println(this.toString());
         id++;
+    }
+
+    @Override
+    protected Branch clone() throws CloneNotSupportedException {
+        Branch tempBranch = null;
+        CopyOnWriteArrayList<Package> tempPackages = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<Object> tempTrucks = new CopyOnWriteArrayList<>();
+        try {
+            tempBranch = (Branch) super.clone();
+            tempBranch.brachId = this.brachId;
+            tempBranch.branchName = this.branchName;
+            tempBranch.isSuspended = this.isSuspended;
+            tempBranch.isTerminated = this.isTerminated;
+            for (Package aPackage : this.listPackages) {
+                if (aPackage instanceof SmallPackage)
+                    tempPackages.add(((SmallPackage) aPackage).clone());
+                if (aPackage instanceof StandardPackage)
+                    tempPackages.add(((StandardPackage) aPackage).clone());
+                if (aPackage instanceof NonStandardPackage)
+                    tempPackages.add(((NonStandardPackage) aPackage).clone());
+            }
+            for (Object aTruck : this.listTrucks) {
+                if (aTruck instanceof Van)
+                    tempTrucks.add(((Van) aTruck).clone());
+                if (aTruck instanceof StandardTruck)
+                    tempTrucks.add(((StandardTruck) aTruck).clone());
+                if (aTruck instanceof NonStandardTruck)
+                    tempTrucks.add(((NonStandardTruck) aTruck).clone());
+            }
+            tempBranch.listPackages = tempPackages;
+            tempBranch.listTrucks = tempTrucks;
+            tempBranch.gui = this.gui.clone();
+            tempBranch.support = new PropertyChangeSupport(this);
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning Branch object!");
+        }
+        return tempBranch;
     }
 
     //Overriders
@@ -66,12 +110,14 @@ public class Branch implements Node, Runnable {
     public void collectPackage(Package p) {
         Object collectTurck = getAvailableTruck(); //Get available Van in branch
         if (collectTurck instanceof Van) { // Prevent Trucks from taking the package
+            support.firePropertyChange("New Package arrived!", null, p);
+            support.firePropertyChange("Package #" + p.getPackageID(), p.getStatus(), Status.COLLECTION);
             p.setStatus(Status.COLLECTION); //TRACKING
             p.addTracking((Van) collectTurck, Status.COLLECTION); //TRACKING
             ((Van) collectTurck).getTruck().getPackages().add(p);
             ((Van) collectTurck).getTruck().setKeepTime(((p.getSenderAddress().getStreet() / 10) % 10 + 1) * 10);
             ((Van) collectTurck).getTruck().setTimeLeft(((Van) collectTurck).getTruck().getKeepTime());
-            ((Van) collectTurck).getGui().setLocation(gui.getX(),gui.getY()); //set TruckGUI location
+            ((Van) collectTurck).getGui().setLocation(gui.getX(), gui.getY()); //set TruckGUI location
             ((Van) collectTurck).getTruck().setAvailable(false);
             ((Van) collectTurck).getGui().visible(true);
             this.getListPackages().remove(p);
@@ -92,12 +138,13 @@ public class Branch implements Node, Runnable {
     public void deliverPackage(Package p) {
         Object deliverTurck = getAvailableTruck();
         if (deliverTurck instanceof Van) { // Prevent Trucks from taking the package
+            support.firePropertyChange("Package #" + p.getPackageID(), p.getStatus(), Status.DISTRIBUTION);
             p.setStatus(Status.DISTRIBUTION);
             p.addTracking((Van) deliverTurck, Status.DISTRIBUTION);
             ((Van) deliverTurck).getTruck().getPackages().add(p);
             ((Van) deliverTurck).getTruck().setKeepTime(((p.getDestinationAddress().getStreet() / 10) % 10 + 1) * 10);
             ((Van) deliverTurck).getTruck().setTimeLeft(((Van) deliverTurck).getTruck().getKeepTime());
-            ((Van) deliverTurck).getGui().setLocation(gui.getX(),gui.getY()); //set TruckGUI location
+            ((Van) deliverTurck).getGui().setLocation(gui.getX(), gui.getY()); //set TruckGUI location
             ((Van) deliverTurck).getTruck().setAvailable(false);
             ((Van) deliverTurck).getGui().visible(true);
             this.getListPackages().remove(p);
@@ -111,13 +158,14 @@ public class Branch implements Node, Runnable {
      * A package with "CREATION" will be collected with a Van.
      * A package with "DELIVERY" will be delivered with a Van.
      *
-     * @since 1.0
+     * @since 1.1
      */
     @Override
     public void work() {
-        if (getListPackages().size() > 0)
+        if (getListPackages().size() > 0) {
+            support.firePropertyChange("Notification to Vans", null, null);
             gui.changeColor("DARK_BLUE");
-        else
+        } else
             gui.changeColor("LIGHT_BLUE");
 
         for (int j = 0; j < this.getListTrucks().size(); j++) { //Scan for collected packages in Van
@@ -159,6 +207,23 @@ public class Branch implements Node, Runnable {
     }
 
     //Getters & Setters
+    /**
+     * Get isTerminated status
+     * @return (isTerminated) status.
+     * @since 1.2
+     */
+    protected Boolean getIsTerminated() {
+        return isTerminated;
+    }
+
+    /**
+     * Set isTerminated status
+     * @param (isTerminated) status.
+     * @since 1.2
+     */
+    protected void setIsTerminated(Boolean isTerminated) {
+        this.isTerminated = isTerminated;
+    }
 
     /**
      * <p>Get Branch Name</p>
@@ -186,7 +251,7 @@ public class Branch implements Node, Runnable {
      * @return object (branch) List of Trucks.
      * @since 1.0
      */
-    protected ArrayList<Object> getListTrucks() {
+    protected CopyOnWriteArrayList<Object> getListTrucks() {
         return listTrucks;
     }
 
@@ -196,7 +261,7 @@ public class Branch implements Node, Runnable {
      * @param listTrucks (branch) List of Trucks.
      * @since 1.0
      */
-    protected void setListTrucks(ArrayList<Object> listTrucks) {
+    protected void setListTrucks(CopyOnWriteArrayList<Object> listTrucks) {
         this.listTrucks = listTrucks;
     }
 
@@ -206,7 +271,7 @@ public class Branch implements Node, Runnable {
      * @return object (branch) List of Packages.
      * @since 1.0
      */
-    protected ArrayList<Package> getListPackages() {
+    protected CopyOnWriteArrayList<Package> getListPackages() {
         return listPackages;
     }
 
@@ -216,7 +281,7 @@ public class Branch implements Node, Runnable {
      * @param listPackages (branch) List of Packages.
      * @since 1.0
      */
-    protected void setListPackages(ArrayList<Package> listPackages) {
+    protected void setListPackages(CopyOnWriteArrayList<Package> listPackages) {
         this.listPackages = listPackages;
     }
 
@@ -280,6 +345,7 @@ public class Branch implements Node, Runnable {
     }
 
     //Overriders
+
     /**
      * <p>Output object details</p>
      *
@@ -333,9 +399,9 @@ public class Branch implements Node, Runnable {
      */
     @Override
     public void run() {
-        while (true) {
+        while (!isTerminated) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e1) {
                 System.out.println(branchName + " thread was interrupted");
             }
@@ -354,4 +420,23 @@ public class Branch implements Node, Runnable {
             }
         }
     }
+
+    /**
+     * Set Change Listener (send event when pack tracking has changed)
+     * @param (pcl) listener
+     * @since 1.2
+     */
+    protected void addPropertyChangeListener(PropertyChangeListener pcl) {
+        support.addPropertyChangeListener(pcl);
+    }
+
+    /**
+     * Get Change Listener (send event when pack tracking has changed)
+     * @return (pcl) listener
+     * @since 1.2
+     */
+    protected PropertyChangeSupport getSupport() {
+        return support;
+    }
+
 }

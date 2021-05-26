@@ -6,8 +6,7 @@
 package components;
 
 import javax.swing.*;
-import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.*;
 
 /**
  * Represents a graphical component of truck
@@ -16,7 +15,7 @@ import java.awt.Graphics;
  */
 
 
-public class TruckGUI extends JComponent {
+public class TruckGUI extends JComponent implements Cloneable {
 
     //Statics
     private static final Color LIGHT_GREEN = new Color(74, 255, 58, 255);
@@ -33,17 +32,36 @@ public class TruckGUI extends JComponent {
 
     //Constructors
     public TruckGUI(String type, int x, int y) {
-        setName(type);
-        setLocation(x, y);
+        this.setName(type);
+        this.setLocation(x, y);
         this.truckSize = 16;
         this.wheelSize = 10;
         this.numPackages = 0;
         if (type.compareTo("Van") == 0)
-            color = Color.BLUE;
+            this.color = Color.BLUE;
         if (type.compareTo("StandardTruck") == 0)
-            color = LIGHT_GREEN;
+            this.color = LIGHT_GREEN;
         if (type.compareTo("NonStandardTruck") == 0)
-            color = LIGHT_RED;
+            this.color = LIGHT_RED;
+    }
+
+    @Override
+    protected TruckGUI clone() throws CloneNotSupportedException {
+        TruckGUI tempTruckGUI = null;
+        try {
+            tempTruckGUI = (TruckGUI) super.clone();
+            tempTruckGUI.setName(this.getName());
+            tempTruckGUI.setLocation(getLocation().x, getLocation().y);
+            tempTruckGUI.color = this.color;
+            tempTruckGUI.truckSize = this.truckSize;
+            tempTruckGUI.wheelSize = this.wheelSize;
+            tempTruckGUI.numPackages = this.numPackages;
+            tempTruckGUI.startBranch = this.startBranch;
+            tempTruckGUI.endBranch = this.endBranch;
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning TruckGUI object!");
+        }
+        return tempTruckGUI;
     }
 
     /**
@@ -71,8 +89,9 @@ public class TruckGUI extends JComponent {
      */
     protected void draw(Graphics g) {
         if (getName().compareTo("StandardTruck") == 0)
-            if (numPackages != 0)
+            if (numPackages > 0)
                 g.drawString(String.valueOf(numPackages), getX() + 5, getY() - 4);
+
         g.setColor(color);
         g.fillRect(getX(), getY(), truckSize, truckSize);
         paintWheels(g);
@@ -116,7 +135,7 @@ public class TruckGUI extends JComponent {
      * @param startBranch (Branch object).
      * @since 1.1
      */
-    public void setStartBranch(Branch startBranch) {
+    protected void setStartBranch(Branch startBranch) {
         this.startBranch = startBranch;
     }
 
@@ -126,7 +145,7 @@ public class TruckGUI extends JComponent {
      * @param endBranch (Branch object).
      * @since 1.1
      */
-    public void setEndBranch(Branch endBranch) {
+    protected void setEndBranch(Branch endBranch) {
         this.endBranch = endBranch;
     }
 
@@ -136,7 +155,7 @@ public class TruckGUI extends JComponent {
      * @param numPackages (int value).
      * @since 1.1
      */
-    public void setNumPackages(int numPackages) {
+    protected void setNumPackages(int numPackages) {
         this.numPackages = numPackages;
     }
 

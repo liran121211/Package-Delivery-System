@@ -10,7 +10,7 @@ package components;
  * Each time the status (and location) of a package is changed a new record is added to the collection
  * Each record includes the time the record was created, The point where the package is located and the status of the package.
  */
-public class Tracking {
+public class Tracking implements Cloneable{
 
     //Attributes
     private int time;
@@ -25,7 +25,19 @@ public class Tracking {
     }
 
     //Methods
-    //Todo (on demand)
+    @Override
+    protected Tracking clone() throws CloneNotSupportedException {
+        Tracking tempTracking = null;
+        try {
+            tempTracking = (Tracking) super.clone();
+            tempTracking.time = this.time;
+            tempTracking.node = this.node;
+            tempTracking.status = this.status;
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning Tracking object!");
+        }
+        return tempTracking;
+    }
 
     //Getters & Setters
     /**
@@ -111,9 +123,6 @@ public class Tracking {
         if (!(obj instanceof Tracking))
             return false;
 
-        if (this.time != ((Tracking) obj).time || this.node != ((Tracking) obj).node || this.status != ((Tracking) obj).status)
-            return false;
-
-        return true;
+        return this.time == ((Tracking) obj).time && this.node == ((Tracking) obj).node && this.status == ((Tracking) obj).status;
     }
 }

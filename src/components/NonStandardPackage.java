@@ -5,13 +5,15 @@
 
 package components;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Represents the non-standard size packages.
  * All packages of this type are transported between clients only.
  *
  * @author Liran Smadja, Tamar Aminov
  */
-public class NonStandardPackage extends Package {
+public class NonStandardPackage extends Package implements Cloneable{
 
     //Attributes
     private int width;
@@ -29,7 +31,29 @@ public class NonStandardPackage extends Package {
     }
 
     //Methods
-    //Todo (on demand)
+    @Override
+    protected NonStandardPackage clone() throws CloneNotSupportedException {
+        NonStandardPackage tempNonStandardPackage = null;
+        CopyOnWriteArrayList<Tracking> tempTracking = new CopyOnWriteArrayList<>();
+        try {
+            tempNonStandardPackage = (NonStandardPackage) super.clone();
+            tempNonStandardPackage.setPackageID(super.getPackageID());
+            tempNonStandardPackage.setStatus(super.getStatus());
+            tempNonStandardPackage.setPriority(super.getPriority());
+            tempNonStandardPackage.setSenderPackage(super.getSenderPackage().clone());
+            tempNonStandardPackage.setDestinationPackage(super.getDestinationPackage().clone());
+            for (int i = 0; i < super.getTracking().size(); i++)
+                tempTracking.add(super.getTracking().get(i).clone());
+            tempNonStandardPackage.setTracking(tempTracking);
+            tempNonStandardPackage.width = this.width;
+            tempNonStandardPackage.length = this.length;
+            tempNonStandardPackage.height = this.height;
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning NonStandardPackage object!");
+        }
+        return tempNonStandardPackage;
+    }
 
     //Getters & Setters
 

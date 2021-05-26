@@ -5,7 +5,10 @@
 
 package components;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.lang.Math;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A vehicle for transporting packages of non-standard size.
@@ -14,7 +17,7 @@ import java.lang.Math;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class NonStandardTruck implements Node, Runnable {
+public class NonStandardTruck implements Node, Runnable, Cloneable {
 
     //Statics
     private final static int MAX_WIDTH = 300;
@@ -28,31 +31,66 @@ public class NonStandardTruck implements Node, Runnable {
     private Truck truck;
     private TruckGUI gui;
     private Boolean isSuspended;
+    private Boolean isTerminated;
+    private PropertyChangeSupport support;
 
     //Constructors
     public NonStandardTruck() {
         super();
-        truck = new Truck();
+        this.truck = new Truck();
         this.width = MAX_WIDTH;
         this.length = MAX_LENGTH;
         this.height = MAX_HEIGHT;
-        isSuspended = true;
+        this.isSuspended = true;
+        this.isTerminated = false;
+        this.support = new PropertyChangeSupport(this);
         System.out.println("Creating " + this.toString());
 
     }
 
     public NonStandardTruck(String licensePlate, String truckModel, int length, int width, int height) {
         super();
-        truck = new Truck(licensePlate, truckModel);
+        this.truck = new Truck(licensePlate, truckModel);
         this.width = width;
         this.length = length;
         this.height = height;
-        isSuspended = false;
+        this.isSuspended = false;
+        this.isTerminated = false;
+        this.support = new PropertyChangeSupport(this);
         System.out.println("Creating " + this.toString());
     }
 
     //Overriders
+    @Override
+    protected NonStandardTruck clone() throws CloneNotSupportedException {
+        NonStandardTruck tempNonStandardTruck = null;
+        CopyOnWriteArrayList<Package> tempPackages = new CopyOnWriteArrayList<>();
+        try {
+            tempNonStandardTruck = (NonStandardTruck) super.clone();
+            tempNonStandardTruck.getTruck().setTruckID(this.truck.getTruckID());
+            tempNonStandardTruck.getTruck().setLicensePlate(this.truck.getLicensePlate());
+            tempNonStandardTruck.getTruck().setTruckModel(this.truck.getTruckModel());
+            tempNonStandardTruck.getTruck().setAvailable(this.truck.isAvailable());
+            tempNonStandardTruck.getTruck().setTimeLeft(this.truck.getTimeLeft());
+            tempNonStandardTruck.getTruck().setKeepTime(this.truck.getKeepTime());
+            for (int i = 0; i < this.truck.getPackages().size(); i++)
+                if (this.truck.getPackages().get(i) instanceof NonStandardPackage)
+                    tempPackages.add(((NonStandardPackage) this.truck.getPackages().get(i)).clone());
 
+            tempNonStandardTruck.getTruck().setPackages(tempPackages);
+            tempNonStandardTruck.setIsTerminated(this.isTerminated);
+            tempNonStandardTruck.width = this.width;
+            tempNonStandardTruck.length = this.length;
+            tempNonStandardTruck.height = this.height;
+            tempNonStandardTruck.isSuspended = this.isSuspended;
+            tempNonStandardTruck.gui = this.gui.clone();
+            tempNonStandardTruck.support = new PropertyChangeSupport(this);
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning NonStandardTruck object!");
+        }
+        return tempNonStandardTruck;
+    }
     /**
      * <p>The NonStandardTruck is sent to the customer's address to pick up a package </p>
      * The package tracking and status is updated.
@@ -62,6 +100,7 @@ public class NonStandardTruck implements Node, Runnable {
      */
     @Override
     public void collectPackage(Package p) {
+        support.firePropertyChange("Package #"+p.getPackageID(), p.getStatus(), Status.DISTRIBUTION);
         p.setStatus(Status.DISTRIBUTION); //TRACKING
         p.addTracking(this, Status.DISTRIBUTION); //TRACKING
         truck.setKeepTime(((Math.abs(p.getSenderAddress().getStreet() - p.getDestinationAddress().getStreet() / 10) % 10) + 1) * 10);
@@ -73,7 +112,6 @@ public class NonStandardTruck implements Node, Runnable {
         gui.repaint();
         gui.visible(true);
         setResume(); // Continue thread activity
-        System.out.println("NonStandardTruck " + truck.getTruckID() + " has collected package " + p.getPackageID());
     }
 
     /**
@@ -85,19 +123,17 @@ public class NonStandardTruck implements Node, Runnable {
      */
     @Override
     public void deliverPackage(Package p) {
+        support.firePropertyChange("Package #"+p.getPackageID(), p.getStatus(), Status.DELIVERED);
         p.setStatus(Status.DELIVERED); //TRACKING
         p.addTracking(null, Status.DELIVERED); //TRACKING
         truck.getPackages().remove(p);
         truck.setAvailable(true);
-        System.out.println("NonStandardTruck " + truck.getTruckID() + " has delivered package " + p.getPackageID() + " to the destination");
         gui.setLocation(1150, 185); //Return Truck GUI to HUB
         p.getDestinationPackage().changeColor("DARK_RED");
         setSuspend(); // Suspend thread activity
     }
 
-
     //Methods
-
     /**
      * <p>A work unit performed by the truck at every second of the system clock</p>
      * When the truck has reached the destination , it will perform an action.
@@ -109,15 +145,10 @@ public class NonStandardTruck implements Node, Runnable {
     @Override
     public void work() {
         if (truck.getPackages().size() > 0)
-            if (truck.getTimeLeft() > 0) {
+            if (truck.getTimeLeft() > 0)
                 truck.setTimeLeft(truck.getTimeLeft() - 1);
-                if (truck.getPackages().size() == 0)
-                    System.out.println();
-                if (truck.getPackages().get(0).getStatus() == Status.COLLECTION)
-                    System.out.println("NonStandardTruck " + truck.getTruckID() + " is collecting package " + truck.getPackages().get(0).getPackageID() + " time to arrive: " + truck.getTimeLeft());
-                if (truck.getPackages().get(0).getStatus() == Status.DISTRIBUTION)
-                    System.out.println("NonStandardTruck " + truck.getTruckID() + " is delivering package " + truck.getPackages().get(0).getPackageID() + " time to arrive: " + truck.getTimeLeft());
-            }
+
+
 
         if (truck.getTimeLeft() == 0) {
             for (int i = 0; i < truck.getPackages().size(); i++) {
@@ -130,6 +161,24 @@ public class NonStandardTruck implements Node, Runnable {
     }
 
     //Getters & Setters
+
+    /**
+     * Get isTerminated status
+     * @return (isTerminated) status.
+     * @since 1.2
+     */
+    protected Boolean getIsTerminated() {
+        return isTerminated;
+    }
+
+    /**
+     * Set isTerminated status
+     * @param (isTerminated) status.
+     * @since 1.2
+     */
+    protected void setIsTerminated(Boolean isTerminated) {
+        this.isTerminated = isTerminated;
+    }
 
     /**
      * <p>Get truck's container width</p>
@@ -255,9 +304,9 @@ public class NonStandardTruck implements Node, Runnable {
      */
     @Override
     public void run() {
-        while (true) {
+        while (!isTerminated) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e1) {
                 System.out.println("NonStandardTruck " + truck.getTruckID() + " thread was interrupted");
             }
@@ -279,6 +328,8 @@ public class NonStandardTruck implements Node, Runnable {
                     if (truck.getPackages().get(0).getStatus() == Status.COLLECTION) {
                         LineGUI senderLine = (truck.getPackages().get(0)).getSenderPackage().getPointTo();
                         int axis = gui.getX() - (int) (distance(senderLine) / truck.getKeepTime());
+                        if (gui.getX() < senderLine.getStartX() && gui.getY() < senderLine.getStartY())  // If the vehicle deviates from the packageGUI then move to delivering.
+                            truck.setTimeLeft(0);
                         gui.setLocation(axis, (int) linear(axis, senderLine));
                     } else if (truck.getPackages().get(0).getStatus() == Status.DISTRIBUTION) {
                         LineGUI receiverLine = truck.getPackages().get(0).getDestinationPackage().getPointTo();
@@ -288,6 +339,17 @@ public class NonStandardTruck implements Node, Runnable {
             }
         }
     }
+
+    /**
+     * Set Change Listener (send event when pack tracking has changed)
+     * @param (pcl) listener
+     * @since 1.2
+     */
+    protected void addPropertyChangeListener(PropertyChangeListener pcl) {
+        support.addPropertyChangeListener(pcl);
+    }
+
+
 
     /**
      * <p>calculate the linear equation: y =mx+n</p>

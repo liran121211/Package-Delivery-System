@@ -5,7 +5,10 @@
 
 package components;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A Truck for transferring packages from the HUB center to the local branches and back.
@@ -14,37 +17,83 @@ import java.util.Random;
  * @author Liran Smadja, Tamar Aminov
  */
 
-public class StandardTruck implements Node, Runnable {
-
+public class StandardTruck implements Node, Runnable, Cloneable {
     //Statics
     final static int MAX_WEIGHT = 8000;
 
     //Attributes
     private Boolean isSuspended;
+    private Boolean isTerminated;
     private Branch destination;
     private Branch keepTrack;
-    private int maxWeight;
     private Truck truck;
     private TruckGUI gui;
+    private PropertyChangeSupport support;
+    private int maxWeight;
 
 
     //Constructors
     public StandardTruck() {
         super();
-        truck = new Truck();
+        this.truck = new Truck();
         this.maxWeight = MAX_WEIGHT;
-        isSuspended = false;
+        this.isSuspended = false;
+        this.isTerminated = false;
+        this.support = new PropertyChangeSupport(this);
         System.out.println("Creating " + this.toString());
     }
 
     public StandardTruck(String licensePlate, String truckModel, int maxWeight) {
         super();
-        truck = new Truck(licensePlate, truckModel);
+        this.truck = new Truck(licensePlate, truckModel);
         this.maxWeight = maxWeight;
+        this.isSuspended = false;
+        this.isTerminated = false;
+        this.support = new PropertyChangeSupport(this);
         System.out.println("Creating " + this.toString());
     }
 
     //Overriders
+    @Override
+    protected synchronized StandardTruck clone() throws CloneNotSupportedException {
+        StandardTruck tempStandardTruck = null;
+        CopyOnWriteArrayList<Package> tempPackages = new CopyOnWriteArrayList<>();
+        try {
+            tempStandardTruck = (StandardTruck) super.clone();
+            tempStandardTruck.getTruck().setTruckID(this.truck.getTruckID());
+            tempStandardTruck.getTruck().setLicensePlate(this.truck.getLicensePlate());
+            tempStandardTruck.getTruck().setTruckModel(this.truck.getTruckModel());
+            tempStandardTruck.getTruck().setAvailable(this.truck.isAvailable());
+            tempStandardTruck.getTruck().setTimeLeft(this.truck.getTimeLeft());
+            tempStandardTruck.getTruck().setKeepTime(this.truck.getKeepTime());
+            for (int i = 0; i < this.truck.getPackages().size(); i++) {
+                if (this.truck.getPackages().get(i) instanceof SmallPackage)
+                    tempPackages.add(((SmallPackage) this.truck.getPackages().get(i)).clone());
+                if (this.truck.getPackages().get(i) instanceof StandardPackage)
+                    tempPackages.add(((StandardPackage) this.truck.getPackages().get(i)).clone());
+            }
+            tempStandardTruck.getTruck().setPackages(tempPackages);
+            if (this.destination == null) // if destination is HUB
+                tempStandardTruck.destination = null;
+            else
+                tempStandardTruck.destination = this.destination;
+
+            if (this.keepTrack == null) // if destination is HUB
+                tempStandardTruck.keepTrack = null;
+            else
+                tempStandardTruck.keepTrack = this.keepTrack;
+
+            tempStandardTruck.isSuspended = this.isSuspended;
+            tempStandardTruck.isTerminated = this.isTerminated;
+            tempStandardTruck.maxWeight = this.maxWeight;
+            tempStandardTruck.gui = this.gui.clone();
+            tempStandardTruck.support = new PropertyChangeSupport(this);
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning StandardTruck object!");
+        }
+        return tempStandardTruck;
+    }
 
     /**
      * <p>The StandardTruck is sent to local branch to pick up packages </p>
@@ -58,13 +107,13 @@ public class StandardTruck implements Node, Runnable {
         if (p.getStatus() == Status.BRANCH_STORAGE) {
             truck.getPackages().add(p);
             destination.getListPackages().remove(p);
+            support.firePropertyChange("Package #" + p.getPackageID(), p.getStatus(), Status.HUB_TRANSPORT);
             p.setStatus(Status.HUB_TRANSPORT);
             p.addTracking(this, Status.HUB_TRANSPORT);
         }
     }
 
     //Overriders
-
     /**
      * <p>The StandardTruck is sent to local branch to deliver packages </p>
      * The package tracking and status is updated.
@@ -79,6 +128,8 @@ public class StandardTruck implements Node, Runnable {
             p.getDestinationPackage().changeColor("LIGHT_RED");
             destination.getListPackages().add(p);
             truck.getPackages().remove(p);
+            support.firePropertyChange("Package #" + p.getPackageID(), p.getStatus(), Status.DELIVERY);
+            p.setStatus(Status.DELIVERY);
             p.setStatus(Status.DELIVERY);
             p.addTracking(this.getDestination(), Status.DELIVERY);
         }
@@ -95,46 +146,46 @@ public class StandardTruck implements Node, Runnable {
      */
     @Override
     public void work() {
-        if (truck.getPackages().size() > 0)
-            gui.changeColor("DARK_GREEN");
-        else
-            gui.changeColor("LIGHT_GREEN");
-        gui.setNumPackages(this.truck.getPackages().size());
-        gui.revalidate();
-        gui.repaint();
-
-        if (truck.getTimeLeft() > 0) {
-            truck.setTimeLeft(truck.getTimeLeft() - 1);
-            if (this.getDestination() != null)
-                System.out.println("StandardTruck " + truck.getTruckID() + " is on it's way to " + this.destination.getBranchName() + " time to arrive: " + truck.getTimeLeft());
+            if (truck.getPackages().size() > 0)
+                gui.changeColor("DARK_GREEN");
             else
-                System.out.println("StandardTruck " + truck.getTruckID() + " is on it's way to HUB time to arrive: " + truck.getTimeLeft());
+                gui.changeColor("LIGHT_GREEN");
+            gui.setNumPackages(this.truck.getPackages().size());
+            gui.revalidate();
+            gui.repaint();
 
-        }
+            if (truck.getTimeLeft() > 0)
+                truck.setTimeLeft(truck.getTimeLeft() - 1);
 
-        if (truck.getTimeLeft() == 0) {
-            if (this.getDestination() != null) { //Collect-Deliver packages only for local branches
-                System.out.println("StandardTruck " + truck.getTruckID() + " arrived to " + this.destination.getBranchName());
-                gui.setLocation(destination.getGui().getPointTo().getStartX(), destination.getGui().getPointTo().getStartY());
+            if (truck.getTimeLeft() == 0) {
+                if (this.getDestination() != null) { //Collect-Deliver packages only for local branches
+                    gui.setLocation(destination.getGui().getPointTo().getStartX(), destination.getGui().getPointTo().getStartY());
 
-                //DELIVER PROCESS
-                for (int i = 0; i < truck.getPackages().size(); i++)
-                    deliverPackage(truck.getPackages().get(i));
-                System.out.println("StandardTruck " + truck.getTruckID() + " unloaded packages at " + this.getDestination().getBranchName());
+                    //DELIVER PROCESS
+                    for (int i = 0; i < truck.getPackages().size(); i++)
+                        deliverPackage(truck.getPackages().get(i));
 
-                //COLLECT PROCESS
-                for (int i = 0; i < destination.getListPackages().size(); i++) {
-                    if (destinationWeight() < this.getMaxWeight())
-                        collectPackage(destination.getListPackages().get(i));
-                    System.out.println("StandardTruck " + truck.getTruckID() + " loaded packages at " + this.getDestination().getBranchName());
+                    //COLLECT PROCESS
+                    for (int i = 0; i < destination.getListPackages().size(); i++) {
+                        if (destinationWeight() < this.getMaxWeight())
+                            collectPackage(destination.getListPackages().get(i));
+                    }
+                    truck.setKeepTime((new Random().nextInt(7) + 1) * 10);
+                    truck.setTimeLeft(truck.getKeepTime());
+                    this.keepTrack = destination; //Keep destination for GUI movement
+                    this.setDestination(null); // Equals to HUB destination
+                    truck.setAvailable(true);
                 }
-                truck.setKeepTime((new Random().nextInt(7) + 1) * 10);
-                truck.setTimeLeft(truck.getKeepTime());
-                this.keepTrack = destination; //Keep destination for GUI movement
-                this.setDestination(null); // Equals to HUB destination
-                truck.setAvailable(true);
             }
-        }
+    }
+
+    /**
+     * Set isTerminated status
+     * @param (isTerminated) status.
+     * @since 1.2
+     */
+    public void setIsTerminated(Boolean isTerminated) {
+        this.isTerminated = isTerminated;
     }
 
     /**
@@ -256,9 +307,10 @@ public class StandardTruck implements Node, Runnable {
      */
     @Override
     public void run() {
-        while (true) {
+
+        while (!isTerminated) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e1) {
                 System.out.println("StandardTruck " + truck.getTruckID() + " thread was interrupted");
             }
@@ -270,21 +322,35 @@ public class StandardTruck implements Node, Runnable {
                 } catch (InterruptedException e) {
                     System.out.println("StandardTruck " + truck.getTruckID() + " thread was interrupted");
                 }
-
             } else {
-                gui.visible(false);
-                work();
-                if (destination != null && truck.getTimeLeft() > 0) {
-                    gui.visible(true);
-                    int axis = gui.getX() - (int) (distance() / truck.getKeepTime());
-                    gui.setLocation(axis, (int) linear(axis));
-                } else if (destination == null && truck.getTimeLeft() > 0) {
-                    gui.visible(true);
-                    int axis = gui.getX() + (int) (distance() / truck.getKeepTime());
-                    gui.setLocation(axis, (int) linear(axis));
+                synchronized (this){
+                    gui.visible(false);
+                    work();
+                    if (destination != null && truck.getTimeLeft() > 0) {
+                        gui.visible(true);
+                        int axis = gui.getX() - (int) (distance() / truck.getKeepTime());
+                        gui.setLocation(axis, (int) linear(axis));
+                    } else if (destination == null && truck.getTimeLeft() > 0) {
+                        gui.visible(true);
+                        int axis = gui.getX() + (int) (distance() / truck.getKeepTime());
+                        gui.setLocation(axis, (int) linear(axis));
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Set Change Listener (send event when pack tracking has changed)
+     * @param (pcl) listener
+     * @since 1.2
+     */
+    protected void addPropertyChangeListener(PropertyChangeListener pcl) {
+        support.addPropertyChangeListener(pcl);
+    }
+
+    public void setKeepTrack(Branch keepTrack) {
+        this.keepTrack = keepTrack;
     }
 
     /**
