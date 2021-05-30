@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Liran Smadja, ID: 311370092. All rights reserved.
+ * Copyright (c) 2021, Liran Smadja, Tamar Aminov, All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
@@ -8,7 +8,7 @@ package components;
 /**
  * Represents the location of a package, can refer to branches and trucks.
  * All points where the package can be in the various stages of its transfer.
- * @author Liran Smadja
+ * @author Liran Smadja, Tamar Aminov
  */
 
 public interface Node {

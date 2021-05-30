@@ -1,18 +1,20 @@
 /*
- * Copyright (c) 2021, Liran Smadja, ID: 311370092. All rights reserved.
+ * Copyright (c) 2021, Liran Smadja, Tamar Aminov, All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
 package components;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * A Truck for transferring packages from the HUB center to the local branches and back.
  * All Trucks of this type are in the HUB center.
- * @author Liran Smadja
+ * @author Liran Smadja, Tamar Aminov
  */
 
 
-public class StandardPackage extends Package {
+public class StandardPackage extends Package implements Cloneable{
 
     //Attributes
     private double weight;
@@ -25,7 +27,27 @@ public class StandardPackage extends Package {
     }
 
     //Methods
-    //Todo (on demand)
+    @Override
+    protected StandardPackage clone() throws CloneNotSupportedException {
+        StandardPackage tempStandardPackage = null;
+        CopyOnWriteArrayList<Tracking> tempTracking = new CopyOnWriteArrayList<>();
+        try {
+            tempStandardPackage = (StandardPackage) super.clone();
+            tempStandardPackage.setPackageID(super.getPackageID());
+            tempStandardPackage.setStatus(super.getStatus());
+            tempStandardPackage.setPriority(super.getPriority());
+            tempStandardPackage.setSenderPackage(super.getSenderPackage().clone());
+            tempStandardPackage.setDestinationPackage(super.getDestinationPackage().clone());
+            for (int i = 0; i < super.getTracking().size(); i++)
+                tempTracking.add(super.getTracking().get(i).clone());
+            tempStandardPackage.setTracking(tempTracking);
+            tempStandardPackage.weight = this.weight;
+
+        } catch (CloneNotSupportedException cns) {
+            System.out.println("Error while cloning StandardPackage object!");
+        }
+        return tempStandardPackage;
+    }
 
     //Getters & Setters
     /**
@@ -77,9 +99,6 @@ public class StandardPackage extends Package {
             return false;
 
         //Primitive Comparison
-        if (this.weight != ((StandardPackage) obj).weight)
-            return false;
-
-        return true;
+        return this.weight == ((StandardPackage) obj).weight;
     }
 }

@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2021, Liran Smadja, ID: 311370092. All rights reserved.
+ * Copyright (c) 2021, Liran Smadja, Tamar Aminov, All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
 package components;
-import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represent the Trucks for transporting packages.
- * @author Liran Smadja
+ * @author Liran Smadja, Tamar Aminov
  */
 
-public abstract class Truck {
+public class Truck {
 
     //Statics
     private final static Random rand = new Random();
@@ -24,13 +24,14 @@ public abstract class Truck {
     private String truckModel;
     private boolean available;
     private int timeLeft;
-    private ArrayList<Package> packages;
+    private int keepTime;
+    private CopyOnWriteArrayList<Package> packages;
 
     //Constructors
     public Truck() {
-        packages = new ArrayList<Package>();
-        this.licensePlate = String.valueOf(rand.nextInt(900) + 100) + "-" + String.valueOf(rand.nextInt(90) + 10) + "-" + String.valueOf(rand.nextInt(900) + 100);
-        this.truckModel = "M" + String.valueOf(rand.nextInt(5));
+        this.packages = new CopyOnWriteArrayList<>();
+        this.licensePlate = (rand.nextInt(900) + 100) + "-" + (rand.nextInt(90) + 10) + "-" + (rand.nextInt(900) + 100);
+        this.truckModel = "M" + rand.nextInt(5);
         this.available = true;
         this.timeLeft = 0;
         this.truckID = id;
@@ -38,7 +39,7 @@ public abstract class Truck {
     }
 
     public Truck(String licensePlate, String truckModel) {
-        packages = new ArrayList<Package>();
+        this.packages = new CopyOnWriteArrayList<>();
         this.licensePlate = licensePlate;
         this.truckModel = truckModel;
         this.available = true;
@@ -48,7 +49,6 @@ public abstract class Truck {
     }
 
     //Methods
-    //TODO (on demand)
 
     //Getters & Setters
     /**
@@ -146,7 +146,7 @@ public abstract class Truck {
      * @return Truck packages list.
      * @since 1.0
      */
-    protected ArrayList<Package> getPackages() {
+    protected CopyOnWriteArrayList<Package> getPackages() {
         return packages;
     }
 
@@ -155,7 +155,7 @@ public abstract class Truck {
      * @param packages (Truck packages list).
      * @since 1.0
      */
-    protected void setPackages(ArrayList<Package> packages) {
+    protected void setPackages(CopyOnWriteArrayList<Package> packages) {
         this.packages = packages;
     }
 
@@ -197,4 +197,25 @@ public abstract class Truck {
                 return false;
         return true;
     }
+
+    /**
+     * <p>Keep the (Timeleft) variable for line distance calculation</p>
+     *
+     * @return keepTime (truck timeleft value)
+     * @since 1.1
+     */
+    protected synchronized int getKeepTime() {
+        return keepTime;
+    }
+
+    /**
+     * <p>Keep the (Timeleft) variable for line distance calculation</p>
+     *
+     * @param keepTime (truck timeleft value)
+     * @since 1.1
+     */
+    protected synchronized void setKeepTime(int keepTime) {
+        this.keepTime = keepTime;
+    }
+
 }

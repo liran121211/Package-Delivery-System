@@ -1,19 +1,22 @@
 /*
- * Copyright (c) 2021, Liran Smadja, ID: 311370092. All rights reserved.
+ * Copyright (c) 2021, Liran Smadja, Tamar Aminov, All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
-
 package components;
+
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import static components.MainOffice.getId; //main clock
 
 /**
  * Represent an abstract object of package
  * Contains all of the attributes that each package should have.
- * @author Liran Smadja
+ *
+ * @author Liran Smadja, Tamar Aminov
  */
 
-public abstract class Package {
+public abstract class Package{
 
     //Statics
     static private int id = 1000;
@@ -22,26 +25,27 @@ public abstract class Package {
     private int packageID;
     private Priority priority;
     private Status status;
-    private Address senderAddress;
-    private Address destinationAddress;
-    private ArrayList<Tracking> tracking;
+    private Address senderAddress, destinationAddress;
+    private PackageGUI senderPackage, destinationPackage;
+    private CopyOnWriteArrayList<Tracking> tracking;
 
     //Constructors
     public Package(Priority priority, Address senderAddress, Address destinationAddress) {
+        this.tracking = new CopyOnWriteArrayList<>();
+        this.tracking.add(new Tracking(getId(), null, Status.CREATION)); // null - package at customer position
         this.priority = priority;
         this.senderAddress = senderAddress;
         this.destinationAddress = destinationAddress;
         this.status = Status.CREATION;
-        tracking = new ArrayList<>();
-        this.tracking.add(new Tracking(getId(), null, Status.CREATION)); // null - package at customer position
         this.packageID = id;
         id++;
     }
-
     //Methods
+
     /**
      * <p>Update package tracking</p>
-     * @param node (package location)
+     *
+     * @param node   (package location)
      * @param status (package status)
      * @since 1.0
      */
@@ -51,13 +55,18 @@ public abstract class Package {
 
     /**
      * <p>Print all of the statuses changes that were made with the package</p>
+     *
      * @since 1.0
      */
     protected void printTracking() {
         System.out.println("\nTRACKING " + this.toString());
         for (int i = 0; i < getTracking().size(); i++) {
-            if (getTracking().get(i).getNode() instanceof Truck)
-                System.out.println(getTracking().get(i).getTime() + ": " + getClassName(getTracking().get(i).getNode()) + ", status=" + getTracking().get(i).getStatus());
+            if (getTracking().get(i).getNode() instanceof StandardTruck)
+                System.out.println(getTracking().get(i).getTime() + ": " + "StandardTruck " + ((StandardTruck) getTracking().get(i).getNode()).getTruck().getTruckID() + ",status=" + getTracking().get(i).getStatus());
+            else if (getTracking().get(i).getNode() instanceof NonStandardTruck)
+                System.out.println(getTracking().get(i).getTime() + ": " + "NonStandardTruck " + ((NonStandardTruck) getTracking().get(i).getNode()).getTruck().getTruckID() + ",status=" + getTracking().get(i).getStatus());
+            else if (getTracking().get(i).getNode() instanceof Van)
+                System.out.println(getTracking().get(i).getTime() + ": " + "Van " + ((Van) getTracking().get(i).getNode()).getTruck().getTruckID() + ",status=" + getTracking().get(i).getStatus());
             else if (getTracking().get(i).getNode() instanceof Branch)
                 System.out.println(getTracking().get(i).getTime() + ": " + ((Branch) getTracking().get(i).getNode()).getBranchName() + ", status=" + getTracking().get(i).getStatus());
             else
@@ -66,8 +75,10 @@ public abstract class Package {
     }
 
     //Getters & Setters
+
     /**
      * <p>Get package identifier</p>
+     *
      * @return package identifier.
      * @since 1.0
      */
@@ -77,6 +88,7 @@ public abstract class Package {
 
     /**
      * <p>Get package priority</p>
+     *
      * @return package priority.
      * @since 1.0
      */
@@ -86,7 +98,8 @@ public abstract class Package {
 
     /**
      * <p>Update package status</p>
-     * @param  priority (package priority status)
+     *
+     * @param priority (package priority status)
      * @since 1.0
      */
     protected void setPriority(Priority priority) {
@@ -95,6 +108,7 @@ public abstract class Package {
 
     /**
      * <p>Get package status</p>
+     *
      * @return package status.
      * @since 1.0
      */
@@ -104,7 +118,8 @@ public abstract class Package {
 
     /**
      * <p>Update package status</p>
-     * @param  status (package status)
+     *
+     * @param status (package status)
      * @since 1.0
      */
     protected void setStatus(Status status) {
@@ -113,6 +128,7 @@ public abstract class Package {
 
     /**
      * <p>Get package sender Address</p>
+     *
      * @return package sender Address.
      * @since 1.0
      */
@@ -122,7 +138,8 @@ public abstract class Package {
 
     /**
      * <p>Update package sender Address</p>
-     * @param  senderAddress (package sender Address)
+     *
+     * @param senderAddress (package sender Address)
      * @since 1.0
      */
     protected void setSenderAddress(Address senderAddress) {
@@ -131,6 +148,7 @@ public abstract class Package {
 
     /**
      * <p>Get package destination Address</p>
+     *
      * @return package destination Address.
      * @since 1.0
      */
@@ -140,7 +158,8 @@ public abstract class Package {
 
     /**
      * <p>Update package setDestination Address</p>
-     * @param  destinationAddress (package setDestination Address)
+     *
+     * @param destinationAddress (package setDestination Address)
      * @since 1.0
      */
     protected void setDestinationAddress(Address destinationAddress) {
@@ -149,46 +168,37 @@ public abstract class Package {
 
     /**
      * <p>Get package tracking list</p>
+     *
      * @return package tracking list.
      * @since 1.0
      */
-    protected ArrayList<Tracking> getTracking() {
+    protected CopyOnWriteArrayList<Tracking> getTracking() {
         return tracking;
     }
 
     /**
      * <p>Update tracking list</p>
-     * @param  tracking (package tracking list)
+     *
+     * @param tracking (package tracking list)
      * @since 1.0
      */
-    protected void setTracking(ArrayList<Tracking> tracking) {
+    protected void setTracking(CopyOnWriteArrayList<Tracking> tracking) {
         this.tracking = tracking;
     }
 
     /**
      * <p>Update package identifier</p>
-     * @param packageID  (package identifier).
+     *
+     * @param packageID (package identifier).
      * @since 1.0
      */
     protected void setPackageID(int packageID) {
         this.packageID = packageID;
     }
 
-
-    private String getClassName(Object obj) {
-        if (obj instanceof Truck) {
-            if (obj instanceof Van)
-                return "Van " + ((Van) obj).getTruckID();
-            if (obj instanceof StandardTruck)
-                return "StandardTruck " + ((StandardTruck) obj).getTruckID();
-            if (obj instanceof NonStandardTruck)
-                return "NonStandardTruck " + ((NonStandardTruck) obj).getTruckID();
-        }
-        return " N/A ";
-    }
-
     /**
      * <p>Output object details</p>
+     *
      * @return this object attributes details.
      * @since 1.0
      */
@@ -203,6 +213,7 @@ public abstract class Package {
 
     /**
      * <p>Package objects comparison</p>
+     *
      * @param obj (Package object)
      * @return True if objects are equal, else False.
      * @since 1.0
@@ -226,5 +237,47 @@ public abstract class Package {
 
         return true;
     }
+
+    /**
+     * <p>Get Customer sender package</p>
+     *
+     * @return senderPackage (Package apackage)
+     * @since 1.1
+     */
+    protected PackageGUI getSenderPackage() {
+        return senderPackage;
+    }
+
+    /**
+     * <p>Set Customer sender package</p>
+     *
+     * @param senderPackage senderPackage (Package apackage)
+     * @since 1.1
+     */
+    protected void setSenderPackage(PackageGUI senderPackage) {
+        this.senderPackage = senderPackage;
+    }
+
+    /**
+     * <p>Get customer destination package</p>
+     *
+     * @return senderPackage (Package apackage)
+     * @since 1.1
+     */
+    protected PackageGUI getDestinationPackage() {
+        return destinationPackage;
+    }
+
+    /**
+     * <p>Set Customer receiver package</p>
+     *
+     * @param destinationPackage destinationPackage (Package apackage)
+     * @since 1.1
+     */
+    protected void setDestinationPackage(PackageGUI destinationPackage) {
+        this.destinationPackage = destinationPackage;
+    }
+
+
 
 }
